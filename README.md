@@ -53,3 +53,8 @@ The string output is
 ```
 My name is Harry and my age is 24
 ```
+
+Two extractor specifier are supported.
+
+* `{}` : to extract substring.
+* `{h}` : to extract hexidecimal substring. Prefix of `0x` is taken care of.
