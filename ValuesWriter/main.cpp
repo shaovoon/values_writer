@@ -7,7 +7,7 @@ int main()
     Console w;
     //Debug w;
 
-    w.WriteLine("My name is {}, My age is {h}", "Harry", 24);
+    w.WriteLine("My name is {} and my age is {}", "Harry", 24);
     
     return 0;
 }
@@ -18,7 +18,7 @@ int main()
     using namespace writer;
 
     FileWriter w("d:\\temp2\\file.txt");
-    w.WriteLine("My name is {}, My age is {h}", "Harry", 24);
+    w.WriteLine("My name is {} and my age is {}", "Harry", 24);
     
     return 0;
 }
@@ -33,7 +33,7 @@ int main()
 
     SyslogWriter w("Logs", LOG_PERROR|LOG_PID, LOG_USER);
 
-    w.Write(LOG_INFO, "My name is {}, My age is {h}", "Henry", 24);
+    w.Write(LOG_INFO, "My name is {} and my age is {}", "Harry", 24);
 
     return 0;
 }
