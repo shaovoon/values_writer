@@ -58,3 +58,4 @@ Two format specifier are supported.
 
 * `{}` : to format basic type value into string.
 * `{h}` : to format `int` value to hexidecimal string with no `0x` prefix.
+* `{t}` : to trim before format `input string.

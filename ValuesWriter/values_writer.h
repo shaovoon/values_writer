@@ -25,7 +25,8 @@ namespace writer
 	enum class TokenType
 	{
 		Hex,
-		Matter
+		Matter,
+		Trim
 	};
 
 	struct Token
@@ -105,7 +106,43 @@ namespace writer
 
 		DataType(wchar_t wc) { m_ptr.wc = wc; m_type = DTR_WCHAR; }
 
-		bool ConvTypeToStr(std::string& str, bool hex)
+		static std::string TrimRight(const std::string& str, const std::string& trimChars)
+		{
+			std::string result = "";
+			// trim trailing spaces
+			size_t endpos = str.find_last_not_of(trimChars);
+			if (std::string::npos != endpos)
+			{
+				result = str.substr(0, endpos + 1);
+			}
+			else
+				result = str;
+
+			return result;
+		}
+
+		static std::string TrimLeft(const std::string& str, const std::string& trimChars)
+		{
+			std::string result = "";
+
+			// trim leading spaces
+			size_t startpos = str.find_first_not_of(trimChars);
+			if (std::string::npos != startpos)
+			{
+				result = str.substr(startpos);
+			}
+			else
+				result = str;
+
+			return result;
+		}
+
+		static std::string Trim(const std::string& str, const std::string& trimChars)
+		{
+			return TrimLeft(TrimRight(str, trimChars), trimChars);
+		}
+
+		bool ConvTypeToStr(std::string& str, TokenType tokenType)
 		{
 			using namespace std;
 
@@ -115,7 +152,7 @@ namespace writer
 			{
 			case DTR_INT:
 			{
-				if (hex)
+				if (tokenType == TokenType::Hex)
 					snprintf(buf, sizeof(buf), "%X", m_ptr.i);
 				else
 					snprintf(buf, sizeof(buf), "%d", m_ptr.i);
@@ -124,7 +161,7 @@ namespace writer
 			}
 			case DTR_UINT:
 			{
-				if (hex)
+				if (tokenType == TokenType::Hex)
 					snprintf(buf, sizeof(buf), "%X", m_ptr.ui);
 				else
 					snprintf(buf, sizeof(buf), "%u", m_ptr.ui);
@@ -133,7 +170,7 @@ namespace writer
 			}
 			case DTR_SHORT:
 			{
-				if (hex)
+				if (tokenType == TokenType::Hex)
 					snprintf(buf, sizeof(buf), "%X", m_ptr.si);
 				else
 					snprintf(buf, sizeof(buf), "%d", m_ptr.si);
@@ -142,7 +179,7 @@ namespace writer
 			}
 			case DTR_USHORT:
 			{
-				if (hex)
+				if (tokenType == TokenType::Hex)
 					snprintf(buf, sizeof(buf), "%X", m_ptr.usi);
 				else
 					snprintf(buf, sizeof(buf), "%u", m_ptr.usi);
@@ -163,14 +200,21 @@ namespace writer
 			}
 			case DTR_STR:
 				str = *(m_ptr.ps);
+				if (tokenType == TokenType::Trim)
+					str = Trim(str, " \r\n\t\v");
+
 				return true;
 			case DTR_WSTR:
 				for (wchar_t ch : *(m_ptr.pws))
 					str += (char)ch;
+
+				if (tokenType == TokenType::Trim)
+					str = Trim(str, " \r\n\t\v");
+
 				return true;
 			case DTR_INT64:
 			{
-				if (hex)
+				if (tokenType == TokenType::Hex)
 					snprintf(buf, sizeof(buf), "%llX", m_ptr.i64);
 				else
 					snprintf(buf, sizeof(buf), "%lld", m_ptr.i64);
@@ -179,7 +223,7 @@ namespace writer
 			}
 			case DTR_UINT64:
 			{
-				if (hex)
+				if (tokenType == TokenType::Hex)
 					snprintf(buf, sizeof(buf), "%lluX", m_ptr.ui64);
 				else
 					snprintf(buf, sizeof(buf), "%llu", m_ptr.ui64);
@@ -188,6 +232,8 @@ namespace writer
 			}
 			case DTR_CHAR_PTR:
 				str = m_ptr.pc;
+				if (tokenType == TokenType::Trim)
+					str = Trim(str, " \r\n\t\v");
 
 				return true;
 
@@ -233,6 +279,11 @@ namespace writer
 				find_size = 3;
 				find = "{h}";
 			}
+			if (type == TokenType::Trim)
+			{
+				find_size = 3;
+				find = "{t}";
+			}
 
 			size_t pos = 0;
 			pos = input.find(find);
@@ -249,6 +300,7 @@ namespace writer
 		{
 			std::vector<Token> vecMatter = Find(fmt, TokenType::Matter);
 			std::vector<Token> vecHex = Find(fmt, TokenType::Hex);
+			std::vector<Token> vecTrim = Find(fmt, TokenType::Trim);
 
 			std::vector<Token> vec;
 			for (auto& a : vecMatter)
@@ -256,6 +308,10 @@ namespace writer
 				vec.push_back(a);
 			}
 			for (auto& a : vecHex)
+			{
+				vec.push_back(a);
+			}
+			for (auto& a : vecTrim)
 			{
 				vec.push_back(a);
 			}
@@ -305,7 +361,7 @@ namespace writer
 			{
 				std::string converted;
 				const Token& token = tokens[i];
-				results[i].ConvTypeToStr(converted, token.type == TokenType::Hex);
+				results[i].ConvTypeToStr(converted, token.type);
 				resultStr.replace(token.start + start_offset, token.size, converted);
 
 				start_offset += ((int)(converted.size()) - (int)(token.size));
@@ -336,7 +392,7 @@ namespace writer
 			{
 				std::string converted;
 				const Token& token = tokens[i];
-				results[i].ConvTypeToStr(converted, token.type == TokenType::Hex);
+				results[i].ConvTypeToStr(converted, token.type);
 				resultStr.replace(token.start + start_offset, token.size, converted);
 
 				start_offset += ((int)(converted.size()) - (int)(token.size));

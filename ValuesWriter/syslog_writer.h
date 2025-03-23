@@ -49,7 +49,7 @@ namespace writer
 			{
 				std::string converted;
 				const Token& token = tokens[i];
-				results[i].ConvTypeToStr(converted, token.type == TokenType::Hex);
+				results[i].ConvTypeToStr(converted, token.type);
 				resultStr.replace(token.start + start_offset, token.size, converted);
 
 				start_offset += ((int)(converted.size()) - (int)(token.size));
@@ -80,7 +80,7 @@ namespace writer
 			{
 				std::string converted;
 				const Token& token = tokens[i];
-				results[i].ConvTypeToStr(converted, token.type == TokenType::Hex);
+				results[i].ConvTypeToStr(converted, token.type);
 				resultStr.replace(token.start + start_offset, token.size, converted);
 
 				start_offset += ((int)(converted.size()) - (int)(token.size));

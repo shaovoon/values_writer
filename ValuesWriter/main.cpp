@@ -7,7 +7,8 @@ int main()
     Console w;
     //Debug w;
 
-    w.WriteLine("My name is {} and my age is {}", "Harry", 24);
+    // test new trim specifier : {t}
+    w.WriteLine("My name is {t} and my age is {}", " Harry\t", 24);
     
     return 0;
 }
