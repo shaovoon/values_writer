@@ -1,6 +1,6 @@
 # String Formatter Writer
 
-This header-only library implement `std::print` with options to write to console, debug, file and syslog. This is the console example.
+C++11 header-only library implement `std::print` with options to write to console, debug, file and syslog. Only ASCII string and basic types are supported. This is the console example.
 
 ```Cpp
 #include "values_writer.h"
@@ -58,4 +58,4 @@ Two format specifier are supported.
 
 * `{}` : to format basic type value into string.
 * `{h}` : to format `int` value to hexidecimal string with no `0x` prefix.
-* `{t}` : to trim before format `input string.
+* `{t}` : to trim input string.
