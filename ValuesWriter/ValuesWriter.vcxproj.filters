@@ -20,10 +20,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="values_writer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="syslog_writer.h">
+    <ClInclude Include="print.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

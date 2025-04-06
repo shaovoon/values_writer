@@ -1,40 +1,42 @@
-#include "values_writer.h"
+#include "print.h"
+
+using namespace printer;
+
 
 int main()
 {
-    using namespace writer;
-
-    Console w;
-    //Debug w;
-
-    // test new trim specifier : {t}
-    w.WriteLine("My name is {t} and my age is {}", " Harry\t", 24);
+	print("My name is {} and my age is {}\n", "Harry", 24);
+    dprint("My name is {} and my age is {}\n", "Harry", 24);
     
     return 0;
 }
 
+
 /*
 int main()
 {
-    using namespace writer;
+	std::string filePath = "d:\\temp2\\file.txt";
+	FILE* fp = fopen(filePath.c_str(), "wt");
 
-    FileWriter w("d:\\temp2\\file.txt");
-    w.WriteLine("My name is {} and my age is {}", "Harry", 24);
-    
+    fprint(fp, "My name is {} and my age is {}\n", "Harry", 24);
+
+	fclose(fp);
+	fp = nullptr;
+
     return 0;
 }
 */
 
 /*
-#include "syslog_writer.h"
+#include <syslog.h>
 
 int main()
 {
-    using namespace writer;
+    openlog("Logs", LOG_PERROR|LOG_PID, LOG_USER);
 
-    SyslogWriter w("Logs", LOG_PERROR|LOG_PID, LOG_USER);
+    sysprint(LOG_INFO, "My name is {} and my age is {}", "Harry", 24);
 
-    w.Write(LOG_INFO, "My name is {} and my age is {}", "Harry", 24);
+    closelog();
 
     return 0;
 }

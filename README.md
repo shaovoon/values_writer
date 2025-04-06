@@ -3,49 +3,40 @@
 C++11 header-only library implement `std::print` with options to write to console, debug, file and syslog. Only ASCII string and basic types are supported. This is the console example.
 
 ```Cpp
-#include "values_writer.h"
+#include "print.h"
 
-using namespace writer;
+using namespace printer;
 
-Console w;
-
-w.WriteLine("My name is {} and my age is {}", "Harry", 24);
+print("My name is {} and my age is {}", "Harry", 24);
 ```
 
-This is the debug output example. On Windows, it calls `OutputDebugStringA`. On Apple MacOS, it calls `os_log` but you cannot use it on DriverKit because this library makes use of `std::vector` and DriverKit does not have `std::vector`.
+This is the debug output example using `dprint`.. On Windows, it calls `OutputDebugStringA`. On Apple MacOS, it calls `os_log` but you cannot use it on DriverKit because this library makes use of `std::vector` and DriverKit does not have `std::vector`.
 
 ```Cpp
-#include "values_writer.h"
-
-using namespace writer;
-
-Debug w;
-
-w.WriteLine("My name is {} and my age is {}", "Harry", 24);
+dprint("My name is {} and my age is {}", "Harry", 24);
 ```
 
-The example to write to file.
+The example to write to file using `fprint`.
 
 ```Cpp
-#include "values_writer.h"
+std::string filePath = "d:\\temp2\\file.txt";
 
-using namespace writer;
+FILE* fp = fopen(filePath.c_str(), "wt");
 
-FileWriter w("d:\\temp2\\file.txt");
+fprint(fp, "My name is {} and my age is {}\n", "Harry", 24);
 
-w.WriteLine("My name is {} and my age is {}", "Harry", 24);
+fclose(fp);
+fp = nullptr;
 ```
 
-The syslog example is below.
+The syslog example using `sysprint` is below.
 
 ```Cpp
-#include "syslog_writer.h"
+openlog("Logs", LOG_PERROR|LOG_PID, LOG_USER);
 
-using namespace writer;
+sysprint(LOG_INFO, "My name is {} and my age is {}", "Harry", 24);
 
-SyslogWriter w("Logs", LOG_PERROR|LOG_PID, LOG_USER);
-
-w.Write(LOG_INFO, "My name is {} and my age is {}", "Harry", 24);
+closelog();
 ```
 
 The string output is 

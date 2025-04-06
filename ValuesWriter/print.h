@@ -16,11 +16,16 @@
     #include <Windows.h>
 #endif
 
+#if !defined(_MSC_VER)
+    #include <syslog.h>
+#endif
+
+
 #ifdef __APPLE__
     #include <os/log.h>
 #endif
 
-namespace writer
+namespace printer
 {
 	enum class TokenType
 	{
@@ -265,10 +270,9 @@ namespace writer
 		WUNIONPTR m_ptr;
 	};
 
-	class ValuesWriterBase
+	namespace detail
 	{
-	public:
-		static std::vector<Token> Find(const std::string& input, TokenType type)
+		inline std::vector<Token> Find(const std::string& input, TokenType type)
 		{
 			std::vector<Token> vec;
 			size_t find_size = 2;
@@ -296,7 +300,7 @@ namespace writer
 			return vec;
 		}
 
-		static std::vector<Token> TokenizeFmtString(const std::string& fmt)
+		inline std::vector<Token> TokenizeFmtString(const std::string& fmt)
 		{
 			std::vector<Token> vecMatter = Find(fmt, TokenType::Matter);
 			std::vector<Token> vecHex = Find(fmt, TokenType::Hex);
@@ -322,25 +326,19 @@ namespace writer
 			return vec;
 		}
 
-		static void AddData(std::vector<DataType>& results)
+		inline void AddData(std::vector<DataType>& results)
 		{
 		}
 
 		template<typename T, typename... Args>
-		static void AddData(std::vector<DataType>& results, T& value, Args... args)
+		inline void AddData(std::vector<DataType>& results, T& value, Args... args)
 		{
 			results.push_back({ value });
 			AddData(results, args...);
 		}
-	};
 
-
-	template <typename Derived>
-	class ValuesWriter : public ValuesWriterBase
-	{
-	public:
 		template<typename... Args>
-		void WriteLine(const char* fmt, Args... args)
+		inline std::string Write(const char* fmt, Args... args)
 		{
 			std::vector<Token> tokens = TokenizeFmtString(fmt);
 
@@ -353,38 +351,7 @@ namespace writer
 			if (tokens.size() != results.size())
 			{
 				printf("tokens.size() != results.size() : (%zu != %zu)\n", tokens.size(), results.size());
-				return;
-			}
-
-			int start_offset = 0;
-			for(size_t i=0; i<tokens.size(); ++i)
-			{
-				std::string converted;
-				const Token& token = tokens[i];
-				results[i].ConvTypeToStr(converted, token.type);
-				resultStr.replace(token.start + start_offset, token.size, converted);
-
-				start_offset += ((int)(converted.size()) - (int)(token.size));
-			}
-
-			static_cast<Derived*>(this)->Print(resultStr, true);
-		}
-
-		template<typename... Args>
-		void Write(const char* fmt, Args... args)
-		{
-			std::vector<Token> tokens = TokenizeFmtString(fmt);
-
-			std::vector<DataType> results;
-
-			AddData(results, args...);
-
-			std::string resultStr = fmt;
-
-			if (tokens.size() != results.size())
-			{
-				printf("tokens.size() != results.size() : (%zu != %zu)\n", tokens.size(), results.size());
-				return;
+				return {};
 			}
 
 			int start_offset = 0;
@@ -398,88 +365,49 @@ namespace writer
 				start_offset += ((int)(converted.size()) - (int)(token.size));
 			}
 
-			static_cast<Derived*>(this)->Print(resultStr, false);
+			return resultStr;
 		}
-	};
 
-	class Console : public ValuesWriter<Console>
+	} // ns detail
+
+	template<typename... Args>
+	inline void print(const char* fmt, Args... args)
 	{
-	public:
-		void Print(const std::string& str, bool newline)
-		{
-			if (newline)
-			{
-				printf("%s\n", str.c_str());
-			}
-			else
-			{
-				printf("%s", str.c_str());
-			}
-		}
-	};
+		std::string str = detail::Write(fmt, args...);
+		printf("%s", str.c_str());
+	}
 
 #ifdef _MSC_VER
-	class Debug : public ValuesWriter<Debug>
+	template<typename... Args>
+	inline void dprint(const char* fmt, Args... args)
 	{
-	public:
-		void Print(const std::string& str, bool newline)
-		{
-			OutputDebugStringA(str.c_str());
-		}
-	};
+		std::string str = detail::Write(fmt, args...);
+		OutputDebugStringA(str.c_str());
+	}
 #endif
 
 #ifdef __APPLE__
-	class Debug : public ValuesWriter<Debug>
+	template<typename... Args>
+	inline void dprint(const char* fmt, Args... args)
 	{
-	public:
-		void Print(const std::string& str, bool newline)
-		{
-			if (newline)
-			{
-				os_log(OS_LOG_DEFAULT, "%{public}s\n", str.c_str());
-			}
-			else
-			{
-				os_log(OS_LOG_DEFAULT, "%{public}s", str.c_str());
-			}
-		}
-	};
+		std::string str = detail::Write(fmt, args...);
+		os_log(OS_LOG_DEFAULT, "%{public}s", str.c_str());
+	}
 #endif
 
-	class FileWriter : public ValuesWriter<FileWriter>
+	template<typename... Args>
+	inline void fprint(FILE* fp, const char* fmt, Args... args)
 	{
-	public:
-		FileWriter(const char* path) : FilePath(path)
-		{
-			File = fopen(FilePath.c_str(), "wt");
-		}
+		std::string str = detail::Write(fmt, args...);
+		fprintf(fp, "%s", str.c_str());
+	}
 
-		~FileWriter()
-		{
-			if (File)
-			{
-				fclose(File);
-				File = nullptr;
-			}
-		}
-		void Print(const std::string& str, bool newline)
-		{
-			if (File)
-			{
-				if (newline)
-				{
-					fprintf(File, "%s\n", str.c_str());
-				}
-				else
-				{
-					fprintf(File, "%s", str.c_str());
-				}
-			}
-		}
-	private:
-		std::string FilePath;
-		FILE* File = nullptr;
-	};
-
+#if !defined(_MSC_VER)
+	template<typename... Args>
+	inline void sysprint(int facility_priority, const char* fmt, Args... args)
+	{
+		std::string str = detail::Write(fmt, args...);
+		syslog(facility_priority, "%s", str.c_str());
+	}
+#endif
 }
